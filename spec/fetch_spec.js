@@ -109,8 +109,34 @@ describe('dart fetcher', function() {
     }).then(done);
   });
 
+
+  it('should load packages', function(done) {
+    opts.http = mockHttp({
+      'x/a.dart': 'import "package:y/b.dart";\na content',
+      'packages/y/b.dart': 'b content'
+    });
+
+    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+      expect(response).toEqual([{
+        path: 'x/a.dart',
+        content: 'import "package:y/b.dart";\na content'
+      }, {
+        path: 'packages/y/lib/b.dart',
+        content: 'b content'
+      }]);
+
+    }).then(done);
+  });
+
   describe('imported files', function() {
-    var imf = fetcher.importedFiles;
+    var imf = function(p) {
+      var paths = [];
+      fetcher.importedFiles(p).forEach(function(pp) {
+        paths.push(pp.serverPath);
+      });
+      return paths;
+    };
+
     it('should find a simple import', function() {
       expect(imf('import "b.dart";')).toEqual(['b.dart']);
     });
@@ -125,6 +151,15 @@ describe('dart fetcher', function() {
     it('should ignore dart: imports', function() {
       expect(imf('import "dart:async";')).toEqual([]);
     });
+
+
+    it('should understand package imports', function() {
+      expect(fetcher.importedFiles('import "package:foo/bar.dart";'))
+          .toEqual([{
+            serverPath: 'packages/foo/bar.dart',
+            filesystemPath: 'packages/foo/lib/bar.dart'
+          }]);
+    })
   });
 });
 
