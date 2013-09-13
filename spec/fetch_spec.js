@@ -1,8 +1,6 @@
 var fetcher = require('../lib/fetch.js');
 var q = require('q');
 
-
-
 describe('dart fetcher', function() {
   var opts;
 
@@ -10,10 +8,12 @@ describe('dart fetcher', function() {
     return {
       getUrl: function(path) {
         for (var url in urls) {
-          if (path == opts.fetcherBaseUrl + url) {
+          if (path == opts.fetcherBaseUrl + url ||
+              (url.substr(0,4) == "http" && path == url)) {
             return q(urls[url]);
           }
         }
+        console.log('Unexpected url: ' + path);
         throw "Unexpected url: " + path;
       }
     };
@@ -21,7 +21,7 @@ describe('dart fetcher', function() {
 
   beforeEach(function() {
     opts = {
-      fetcherBaseUrl: 'http://localhost:9867/base/'
+      fetcherBaseUrl: 'http://localhost:9876/base/'
     };
   });
 
@@ -39,15 +39,27 @@ describe('dart fetcher', function() {
   });
 
 
+  it('should fetch an absolute url', function(done) {
+    opts.http = mockHttp({
+      'http://localhost:9876/base/dodo.dart': 'dodo content'
+    });
+    fetcher.dartFileFetcher(opts)('/base/dodo.dart').then(function(r) {
+      expect(r).toEqual([{
+        path: 'dodo.dart',
+        content: 'dodo content'
+      }]);
+      done();
+    });
+  });
+
+
   it('should fetch a url with imports', function(done) {
-    var b = opts.fetcherBaseUrl;
     opts.http = mockHttp({
       'a.dart': 'import "b.dart";\na content',
       'b.dart': 'b content'
     });
 
-    return fetcher.dartFileFetcher(opts)('a.dart')
-        .then(function(response) {
+    fetcher.dartFileFetcher(opts)('a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'a.dart',
         content: 'import "b.dart";\na content'
@@ -57,6 +69,25 @@ describe('dart fetcher', function() {
       }]);
       done();
     });
+  });
+
+
+  it('should respect directories when importing', function(done) {
+    opts.http = mockHttp({
+      'x/a.dart': 'import "b.dart";\na content',
+      'x/b.dart': 'b content'
+    });
+
+    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+      expect(response).toEqual([{
+        path: 'x/a.dart',
+        content: 'import "b.dart";\na content'
+      }, {
+        path: 'x/b.dart',
+        content: 'b content'
+      }]);
+
+    }).then(done, console.log);
   });
 
   describe('imported files', function() {
