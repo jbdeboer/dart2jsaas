@@ -110,10 +110,11 @@ describe('dart fetcher', function() {
   });
 
 
-  it('should load packages', function(done) {
+  it('should load files within packages', function(done) {
     opts.http = mockHttp({
       'x/a.dart': 'import "package:y/b.dart";\na content',
-      'packages/y/b.dart': 'b content'
+      'packages/y/b.dart': 'import "c.dart"',
+      'packages/y/c.dart': 'c content'
     });
 
     fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
@@ -122,7 +123,10 @@ describe('dart fetcher', function() {
         content: 'import "package:y/b.dart";\na content'
       }, {
         path: 'packages/y/lib/b.dart',
-        content: 'b content'
+        content: 'import "c.dart"'
+      }, {
+        path: 'packages/y/lib/c.dart',
+        content: 'c content'
       }]);
 
     }).then(done);
