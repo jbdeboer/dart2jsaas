@@ -25,17 +25,22 @@ describe('dart fetcher', function() {
     };
   });
 
+  function f(path) {
+    return fetcher.dartFileFetcher(opts)(path).then(function(o) {
+      return o.files;
+    });
+  }
+
   it('should fetch a url with no imports', function(done) {
     opts.http = mockHttp({'noimports.dart': 'no imports content'});
 
-    return fetcher.dartFileFetcher(opts)('noimports.dart')
+    f('noimports.dart')
         .then(function(response) {
       expect(response).toEqual([{
         path: 'noimports.dart',
         content: 'no imports content'
       }]);
-      done();
-    });
+    }).then(done);
   });
 
 
@@ -43,13 +48,12 @@ describe('dart fetcher', function() {
     opts.http = mockHttp({
       'http://localhost:9876/base/dodo.dart': 'dodo content'
     });
-    fetcher.dartFileFetcher(opts)('/base/dodo.dart').then(function(r) {
+    f('/base/dodo.dart').then(function(r) {
       expect(r).toEqual([{
         path: 'dodo.dart',
         content: 'dodo content'
       }]);
-      done();
-    });
+    }).then(done);
   });
 
 
@@ -59,7 +63,7 @@ describe('dart fetcher', function() {
       'b.dart': 'b content'
     });
 
-    fetcher.dartFileFetcher(opts)('a.dart').then(function(response) {
+    f('a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'a.dart',
         content: 'import "b.dart";\na content'
@@ -67,8 +71,7 @@ describe('dart fetcher', function() {
         path: 'b.dart',
         content: 'b content'
       }]);
-      done();
-    });
+    }).then(done);
   });
 
 
@@ -78,7 +81,7 @@ describe('dart fetcher', function() {
       'x/b.dart': 'b content'
     });
 
-    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+    f('x/a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'x/a.dart',
         content: 'import "b.dart";\na content'
@@ -87,7 +90,7 @@ describe('dart fetcher', function() {
         content: 'b content'
       }]);
 
-    }).then(done, console.log);
+    }).then(done);
   });
 
 
@@ -97,7 +100,7 @@ describe('dart fetcher', function() {
       'b.dart': 'b content'
     });
 
-    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+    f('x/a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'x/a.dart',
         content: 'import "../b.dart";\na content'
@@ -105,7 +108,6 @@ describe('dart fetcher', function() {
         path: 'b.dart',
         content: 'b content'
       }]);
-
     }).then(done);
   });
 
@@ -117,7 +119,7 @@ describe('dart fetcher', function() {
       'packages/y/c.dart': 'c content'
     });
 
-    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+    f('x/a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'x/a.dart',
         content: 'import "package:y/b.dart";\na content'
