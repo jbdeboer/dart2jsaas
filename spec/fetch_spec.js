@@ -133,13 +133,7 @@ describe('dart fetcher', function() {
   });
 
   describe('imported files', function() {
-    var imf = function(p) {
-      var paths = [];
-      fetcher.importedFiles(p).forEach(function(pp) {
-        paths.push(pp.serverPath);
-      });
-      return paths;
-    };
+    var imf = fetcher.importedFiles;
 
     it('should find a simple import', function() {
       expect(imf('import "b.dart";')).toEqual(['b.dart']);
@@ -158,11 +152,8 @@ describe('dart fetcher', function() {
 
 
     it('should understand package imports', function() {
-      expect(fetcher.importedFiles('import "package:foo/bar.dart";'))
-          .toEqual([{
-            serverPath: 'packages/foo/bar.dart',
-            filesystemPath: 'packages/foo/lib/bar.dart'
-          }]);
+      expect(imf('import "package:foo/bar.dart";'))
+          .toEqual(['packages/foo/bar.dart']);
     })
   });
 });
