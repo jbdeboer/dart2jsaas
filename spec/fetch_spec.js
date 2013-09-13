@@ -122,10 +122,10 @@ describe('dart fetcher', function() {
         path: 'x/a.dart',
         content: 'import "package:y/b.dart";\na content'
       }, {
-        path: 'packages/y/lib/b.dart',
+        path: 'packages/y/b.dart',
         content: 'import "c.dart"'
       }, {
-        path: 'packages/y/lib/c.dart',
+        path: 'packages/y/c.dart',
         content: 'c content'
       }]);
 
@@ -154,7 +154,12 @@ describe('dart fetcher', function() {
     it('should understand package imports', function() {
       expect(imf('import "package:foo/bar.dart";'))
           .toEqual(['packages/foo/bar.dart']);
-    })
+    });
+
+
+    it('should understand parts', function() {
+      expect(imf('part "foo.dart";')).toEqual(['foo.dart']);
+    });
   });
 });
 
