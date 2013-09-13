@@ -6,6 +6,19 @@ var q = require('q');
 describe('dart fetcher', function() {
   var opts;
 
+  function mockHttp(urls) {
+    return {
+      getUrl: function(path) {
+        for (var url in urls) {
+          if (path == opts.fetcherBaseUrl + url) {
+            return q(urls[url]);
+          }
+        }
+        throw "Unexpected url: " + path;
+      }
+    };
+  }
+
   beforeEach(function() {
     opts = {
       fetcherBaseUrl: 'http://localhost:9867/base/'
@@ -13,12 +26,7 @@ describe('dart fetcher', function() {
   });
 
   it('should fetch a url with no imports', function(done) {
-    opts.http = {
-      getUrl: function(path) {
-        expect(path).toEqual(opts.fetcherBaseUrl + 'noimports.dart');
-        return q('no imports content');
-      }
-    };
+    opts.http = mockHttp({'noimports.dart': 'no imports content'});
 
     return fetcher.dartFileFetcher(opts)('noimports.dart')
         .then(function(response) {
@@ -33,17 +41,10 @@ describe('dart fetcher', function() {
 
   it('should fetch a url with imports', function(done) {
     var b = opts.fetcherBaseUrl;
-    opts.http = {
-      getUrl: function(path) {
-        if (path == b + 'a.dart') {
-          return q('import "b.dart";\na content');
-        }
-        if (path == b + 'b.dart') {
-          return q('b content');
-        }
-        throw "Unexpected path:" + path;
-      }
-    };
+    opts.http = mockHttp({
+      'a.dart': 'import "b.dart";\na content',
+      'b.dart': 'b content'
+    });
 
     return fetcher.dartFileFetcher(opts)('a.dart')
         .then(function(response) {
