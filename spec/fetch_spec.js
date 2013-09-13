@@ -90,6 +90,25 @@ describe('dart fetcher', function() {
     }).then(done, console.log);
   });
 
+
+  it('should respect .. when importing', function(done) {
+    opts.http = mockHttp({
+      'x/a.dart': 'import "../b.dart";\na content',
+      'b.dart': 'b content'
+    });
+
+    fetcher.dartFileFetcher(opts)('x/a.dart').then(function(response) {
+      expect(response).toEqual([{
+        path: 'x/a.dart',
+        content: 'import "../b.dart";\na content'
+      }, {
+        path: 'b.dart',
+        content: 'b content'
+      }]);
+
+    }).then(done);
+  });
+
   describe('imported files', function() {
     var imf = fetcher.importedFiles;
     it('should find a simple import', function() {
@@ -100,6 +119,11 @@ describe('dart fetcher', function() {
     it('should find an import with as', function() {
       expect(imf('import "/base/test/_http.dart" as test_0;'))
           .toEqual(['/base/test/_http.dart']);
+    });
+
+
+    it('should ignore dart: imports', function() {
+      expect(imf('import "dart:async";')).toEqual([]);
     });
   });
 });
