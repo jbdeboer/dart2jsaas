@@ -1,5 +1,8 @@
 {
   "name": "dart2jsaas",
-  "version": "0.1",
-  "main": "lib/index.js"
+  "version": "0.0.1",
+  "main": "lib/index.js",
+  "dependencies": {
+    "q": "~0.9.7"
+  }
 }
