@@ -4,5 +4,22 @@
   "main": "lib/index.js",
   "dependencies": {
     "q": "~0.9.7"
-  }
+  },
+  "description": "dart2jsass ==========",
+  "scripts": {
+    "test": "jasmine-node spec/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jbdeboer/dart2jsaas.git"
+  },
+  "keywords": [
+    "dart2js",
+    "dart"
+  ],
+  "author": "James deBoer <james@huronbox.com>",
+  "contributors": [
+      "Jeff Cross <middlefloor@gmail.com>"
+  ],
+  "license": "MIT"
 }
