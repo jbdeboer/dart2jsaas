@@ -3,7 +3,8 @@
   "version": "0.0.4",
   "main": "lib/index.js",
   "dependencies": {
-    "q": "~0.9.7"
+    "q": "~0.9.7",
+    "connect": "~2.9.0"
   },
   "description": "dart2jsass ==========",
   "scripts": {
