@@ -14,7 +14,7 @@ describe('dart fetcher', function() {
           }
         }
         console.log('Unexpected url: ' + path);
-        throw "Unexpected url: " + path;
+        return q.reject("Unexpected url: " + path);
       }
     };
   }
@@ -30,6 +30,40 @@ describe('dart fetcher', function() {
       return o.files;
     });
   }
+
+
+  it('should return the dart file as a mainDart', function(done) {
+    opts.http = mockHttp({'b.dart': 'no imports content'});
+
+    fetcher.dartFileFetcher(opts)('b.dart').then(function(r) {
+      expect(r.mainDart).toEqual(['b.dart']);
+    }).then(done);
+  });
+
+
+  it('sould return dart files included in html', function(done) {
+    opts.http = mockHttp({'b.html':
+        '<script src="b.dart"></script>' +
+        '<script src="c.dart"></script>',
+      'b.dart': 'no imports',
+      'c.dart': 'no imports'});
+
+    fetcher.dartFileFetcher(opts)('b.html').then(function(r) {
+      expect(r.mainDart).toEqual(['b.dart', 'c.dart']);
+    }).then(done);
+  });
+
+
+  it('should not return imported dart files as mainDart', function(done) {
+    opts.http = mockHttp({
+      'b.dart': 'import "c.dart',
+      'c.dart': 'no imports'});
+
+    fetcher.dartFileFetcher(opts)('b.dart').then(function(r) {
+      expect(r.mainDart).toEqual(['b.dart']);
+    }).then(done);
+  });
+
 
   it('should fetch a url with no imports', function(done) {
     opts.http = mockHttp({'noimports.dart': 'no imports content'});
@@ -50,8 +84,21 @@ describe('dart fetcher', function() {
     });
     f('/base/dodo.dart').then(function(r) {
       expect(r).toEqual([{
-        path: 'dodo.dart',
+        path: 'abs/base/dodo.dart',
         content: 'dodo content'
+      }]);
+    }).then(done);
+  });
+
+
+  it('should fetch a relative url with subdirectories', function(done) {
+    opts.http = mockHttp({
+      'http://localhost:9876/base/one/two.dart': 'two two two'
+    });
+    f('one/two.dart').then(function(r) {
+      expect(r).toEqual([{
+        path: 'one/two.dart',
+        content: 'two two two'
       }]);
     }).then(done);
   });
@@ -77,16 +124,16 @@ describe('dart fetcher', function() {
 
   it('should respect directories when importing', function(done) {
     opts.http = mockHttp({
-      'x/a.dart': 'import "b.dart";\na content',
-      'x/b.dart': 'b content'
+      'x/a.dart': 'import "y/b.dart";\na content',
+      'x/y/b.dart': 'b content'
     });
 
     f('x/a.dart').then(function(response) {
       expect(response).toEqual([{
         path: 'x/a.dart',
-        content: 'import "b.dart";\na content'
+        content: 'import "y/b.dart";\na content'
       }, {
-        path: 'x/b.dart',
+        path: 'x/y/b.dart',
         content: 'b content'
       }]);
 
@@ -96,18 +143,25 @@ describe('dart fetcher', function() {
 
   it('should respect .. when importing', function(done) {
     opts.http = mockHttp({
+      'main.dart': 'import "x/a.dart";\n',
       'x/a.dart': 'import "../b.dart";\na content',
       'b.dart': 'b content'
     });
 
-    f('x/a.dart').then(function(response) {
-      expect(response).toEqual([{
-        path: 'x/a.dart',
-        content: 'import "../b.dart";\na content'
-      }, {
-        path: 'b.dart',
-        content: 'b content'
-      }]);
+    f('main.dart').then(function(response) {
+      expect(response).toEqual([
+        {
+          path: 'main.dart',
+          content: 'import "x/a.dart";\n'
+        },
+        {
+          path: 'x/a.dart',
+          content: 'import "../b.dart";\na content'
+        }, {
+          path: 'b.dart',
+          content: 'b content'
+        }
+      ]);
     }).then(done);
   });
 
@@ -134,33 +188,74 @@ describe('dart fetcher', function() {
     }).then(done);
   });
 
-  describe('imported files', function() {
-    var imf = fetcher.importedFiles;
+  describe('dart imported files', function() {
+    var imf = fetcher.importFor('some.dart');
 
     it('should find a simple import', function() {
-      expect(imf('import "b.dart";')).toEqual(['b.dart']);
+      expect(imf('import "b.dart";').files).toEqual(['b.dart']);
     });
 
 
     it('should find an import with as', function() {
-      expect(imf('import "/base/test/_http.dart" as test_0;'))
-          .toEqual(['/base/test/_http.dart']);
+      expect(imf('import "base/test/_http.dart" as test_0;').files)
+          .toEqual(['base/test/_http.dart']);
     });
 
 
     it('should ignore dart: imports', function() {
-      expect(imf('import "dart:async";')).toEqual([]);
+      expect(imf('import "dart:async";').files).toEqual([]);
     });
 
 
     it('should understand package imports', function() {
-      expect(imf('import "package:foo/bar.dart";'))
+      expect(imf('import "package:foo/bar.dart";').files)
           .toEqual(['packages/foo/bar.dart']);
     });
 
 
     it('should understand parts', function() {
-      expect(imf('part "foo.dart";')).toEqual(['foo.dart']);
+      expect(imf('part "foo.dart";').files).toEqual(['foo.dart']);
+    });
+  });
+
+
+  describe('html imported files', function() {
+    var imf = fetcher.importFor('some.html');
+
+    it('should parse script tags', function() {
+      var c = '<script src="hello.js"></script>';
+      var r = imf(c);
+      expect(r.files).toEqual(['hello.js']);
+      expect(r.content).toEqual(c);
+    });
+
+
+    it('should parse link tags', function() {
+      var c = '<link href="hello.css">';
+      var r = imf(c);
+      expect(r.files).toEqual(['hello.css']);
+      expect(r.content).toEqual(c);
+    });
+
+
+    it('should parse absolute urls', function() {
+      var c = '<script src="/hello.js"></script>';
+      var r = imf(c);
+      expect(r.files).toEqual(['/hello.js']);
+      expect(r.content).toEqual('<script src="abs/hello.js"></script>');
+    });
+
+
+    it('should parse wildcard protocol urls', function () {
+      var c = '<script src="//google.com/hello.js"></script>';
+      var r = imf(c);
+      expect(r.files).toEqual(['//google.com/hello.js']);
+      expect(r.content).toEqual('<script src="global/google.com/hello.js"></script>');
+    });
+
+
+    it('should parse fully qualified urls', function() {
+
     });
   });
 });
