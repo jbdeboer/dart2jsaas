@@ -12,8 +12,10 @@ var opts = {
 var compiler = dart2jsaas.setupSystem(opts);
 
 function endsWith(haystack, needle) {
+  if (haystack.length < needle.length) return false;
+
   var index = haystack.indexOf(needle);
-  return index == haystack.length - needle.length;
+  return index == (haystack.length - needle.length);
 }
 
 var play = playback.playback();
@@ -25,6 +27,7 @@ var app = connect()
         next();
         return;
       }
+      console.log('dart.js url:'+ url);
 
       // Strip the leading /
       dartFile = /\/(.*\.dart)\.js/.exec(url)[1];
@@ -159,6 +162,16 @@ var app = connect()
         'Content-Length': data.length
       });
       res.end(data);
+    })
+    .use(function(req, res, next) {
+      if (endsWith(req.url, '/playback_data.dart')) {
+        res.writeHead(302, {
+          'Location': '/record'
+        });
+        res.end();
+        return;
+      }
+      next();
     })
     .use(connect.static('/home/deboer/github/angular-dart/'))
     .use(function(req, res, next) {
