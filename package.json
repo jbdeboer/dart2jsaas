@@ -1,9 +1,9 @@
 {
   "name": "dart2jsaas",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "main": "lib/index.js",
   "dependencies": {
-    "q": "~0.9.7",
+    "q": "~0.9.7"
   },
   "description": "dart2jsass ==========",
   "scripts": {
