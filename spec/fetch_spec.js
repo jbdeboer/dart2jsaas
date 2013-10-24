@@ -41,7 +41,19 @@ describe('dart fetcher', function() {
   });
 
 
-  it('sould return dart files included in html', function(done) {
+  it('should return the dart file with packages as a mainDart', function(done) {
+    opts.http = mockHttp({
+      'b/b.dart': 'import "package:x/yy.dart";',
+      'packages/x/yy.dart': 'no imports'});
+
+    fetcher.dartFileFetcher(opts)('b/b.dart').then(function(r) {
+      expect(r.mainDart).toEqual(['b/b.dart']);
+      expect(r.files.map(function(x) { return x.path; })).toEqual(['b/b.dart', 'packages/x/yy.dart']);
+    }).then(done, done);
+  });
+
+
+  it('should return dart files included in html', function(done) {
     opts.http = mockHttp({'b.html':
         '<script src="b.dart"></script>' +
         '<script src="c.dart"></script>',
@@ -50,8 +62,35 @@ describe('dart fetcher', function() {
 
     fetcher.dartFileFetcher(opts)('b.html').then(function(r) {
       expect(r.mainDart).toEqual(['b.dart', 'c.dart']);
+      expect(r.files).toEqual([
+          {
+            path: 'b.html',
+            content: '<script src="b.dart"></script><script src="c.dart"></script>'
+          }, {
+            path : 'b.dart',
+            content : 'no imports'
+          }, {
+            path : 'c.dart',
+            content : 'no imports'
+          }]);
     }).then(done);
   });
+
+
+  it('should return dart files with packages included in html', function(done) {
+    opts.http = mockHttp({'c/b.html':
+        '<script src="b/b.dart"></script>' +
+            '<script src="c.dart"></script>',
+      'c/b/b.dart': 'import "package:x/y.dart";',
+      'c/c.dart': 'no imports',
+      'c/packages/x/y.dart': 'no imports'});
+
+    fetcher.dartFileFetcher(opts)('c/b.html').then(function(r) {
+      expect(r.mainDart).toEqual(['b/b.dart', 'c.dart']);
+      expect(r.files.map(function(x) { return x.path; })).toEqual(['c/b.html', 'c/b/b.dart', 'c/c.dart', 'c/packages/x/y.dart']);
+    }).then(done, done);
+  });
+
 
 
   it('should not return imported dart files as mainDart', function(done) {
