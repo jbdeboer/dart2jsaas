@@ -25,8 +25,13 @@ served from multiple locations.
 Usage
 -----
 
-Simple, command-line integration is possible.  See cmdline.js.
-Middleware for connect / express is included as well.
+The basic use-case is to listen for ```main.dart.js``` HTTP requests, compile ```main.dart``` and return the response.
+This setup works well with dart.js' fallback scheme where if it can't find a Dart VM, it simply requests
+```x.dart.js``` in place of the ```x.dart``` script tag.
+
+Middleware for connect / express is included.
+
+Simple, command-line integration is also possible.  See cmdline.js.
 
 To see dart2jsaas in action, check out karma and the karma-dart project.
 
