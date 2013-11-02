@@ -1,9 +1,9 @@
 dart2jsaas
 ==========
 
-Dart2JS-as-a-service is a node module which compiles Dart applications to Javascript without any additional configuration.
+Dart2JS-as-a-service is a node.js module which compiles Dart applications to Javascript without any additional configuration.
 
-It is designed to seamlessly port Dartium-centric workflows to production browsers.
+It is designed to seamlessly port Dartium-centric workflows to production (JS-only) browsers.
 
 How It Works
 ------------
