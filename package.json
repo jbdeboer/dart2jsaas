@@ -1,6 +1,6 @@
 {
   "name": "dart2jsaas",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "main": "lib/index.js",
   "dependencies": {
     "mkdirp": "~0.3.5",
